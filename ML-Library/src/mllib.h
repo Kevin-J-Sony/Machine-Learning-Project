@@ -1,0 +1,9 @@
+
+// Self-evidently, there will be no other library by this name, but out of respect for the standard
+// maintain this convention. Furthermore, we also ensure that all methods are defined within this "if"
+#ifndef ML_LIB_H
+#define ML_LIB_H
+
+#define ML_LIB_DEBUG_MODE
+
+#endif
