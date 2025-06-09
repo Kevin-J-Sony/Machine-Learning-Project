@@ -2,207 +2,138 @@
 // When finished, use malloc rather than calloc
 #include "matrix.h"
 
-/**
- * @brief Return a vector with size 'length'
- * 
- * @param length size of te vector
- * @return pointer to vector of size 'length'
- */
-vector* init_vec(int length) {
-	vector* vec = (vector *)calloc(1, sizeof(struct vector_));
-
+vector* init_vec(size_t s) {
+	vector* vec;
 	#ifdef ML_LIB_DEBUG_MODE
-	if ((void *)vec == NULL) {
-		fprintf(stderr, "Failed vector initialization\n");
-		exit(1);
-	}
+	vec = (vector *)calloc(1, sizeof(vector));
+	#else
+	vec = (vector *)malloc(sizeof(vector));
 	#endif
 
-	vec->size = length;
-	vec->vector = (number *)calloc(length, sizeof(number));
-
+	vec->size = s;
+	
 	#ifdef ML_LIB_DEBUG_MODE
-	if ((void *)vec->vector == NULL) {
-		fprintf(stderr, "Failed vector allocation\n");
-		exit(1);
-	}
+	vec->v = (number *)calloc(s, sizeof(number));
+	#else
+	vec->v = (number *)malloc(s * sizeof(number));
 	#endif
-
+	
 	return vec;
 }
 
-/**
- * @brief Return a matrix of dimensions 'row' by 'col'
- * 
- * @param row 
- * @param col 
- * @return pointer to matrix of size 'row' by 'col'
- */
-matrix* init_mat(int row, int col) {
-	matrix* mat = (matrix *)calloc(1, sizeof(struct matrix_));
 
-	#ifdef ML_LIB_DEBUG_MODE
-	if ((void *)mat == NULL) {
-		fprintf(stderr, "Failed matrix initialization\n");
-		exit(1);
-	}
-	#endif
-
-	mat->row = row;
-	mat->col = col;
-	mat->matrix = (number **)calloc(row, sizeof(number *));
-
-	#ifdef ML_LIB_DEBUG_MODE
-	if ((void *)mat->matrix == NULL) {
-		fprintf(stderr, "Failed matrix column allocation\n");
-		exit(1);
-	}
-	#endif
-
-	for (int i = 0; i < row; i++) {
-		mat->matrix[i] = (number *)calloc(col, sizeof(number));
-
-		#ifdef ML_LIB_DEBUG_MODE
-		if ((void *)mat->matrix[i] == NULL) {
-			fprintf(stderr, "Failed matrix row allocation\n");
-			exit(1);
-		}
-		#endif
-
+void del_vec(vector* vec) {
+	free(vec->v);
+	free(vec);
 }
+
+matrix* init_mat(size_t row, size_t col) {
+	matrix* mat;
+	#ifdef ML_LIB_DEBUG_MODE
+	mat = (matrix *)calloc(1, sizeof(matrix));
+	#else
+	mat = (matrix *)malloc(sizeof(matrix));
+	#endif
+
+	mat->number_of_rows = row;
+	mat->number_of_cols = col;
+		
+	#ifdef ML_LIB_DEBUG_MODE
+	mat->m = (number **)calloc(row, sizeof(number *));
+	for (int i = 0; i < row; i++) {
+		mat->m[i] = (number *)calloc(col, sizeof(number));
+	}
+	#else
+	mat->m = (number **)malloc(row * sizeof(number *));
+	for (int i = 0; i < row; i++) {
+		mat->m[i] = (number *)malloc(col * sizeof(number));
+	}
+	#endif
+	
 	return mat;
 }
 
-// Functions to deallocate vectors and matrices
-/**
- * @brief Deallocates vector
- * 
- * @param v vector to be deallocated
- */
-void free_vec(vector* v) {
-	free(v->vector);
-	free(v);
-}
-
-/**
- * @brief Deallocates matrix
- * 
- * @param m matrix to be deallocated
- */
-void free_mat(matrix* m) {
-	for (int i = 0; i < m->row; i++) {
-		free(m->matrix[i]);
+void del_mat(matrix* mat) {
+	for (int i = 0; i < mat->number_of_rows; i++) {
+		free(mat->m[i]);
 	}
-	free(m->matrix);
-	free(m);
+	free(mat->m);
+	free(mat);
 }
 
-// Get functions
-/**
- * @brief Return value of vector at index
- * 
- * @param v 
- * @param index 
- * @return number 
- */
-number get_vec(vector* v, int index) {
-	return v->vector[index];
-}
+/* *** General vector, matrix operations *** */
 
-/**
- * @brief Return value of matrix at given row and column
- * 
- * @param m 
- * @param row_index 
- * @param col_index 
- * @return number 
- */
-number get_mat(matrix* m, int row_index, int col_index) {
-	return m->matrix[row_index][col_index];
-}
 
-// Set functions
-/**
- * @brief Set value of vector at index
- * 
- * @param v 
- * @param index 
- * @param value 
- */
-void set_vec(vector* v, int index, int value) {
-	v->vector[index] = value;
-}
-
-/**
- * @brief Set value of matrix at given row and column
- * 
- * @param m 
- * @param row_index 
- * @param col_index 
- * @param value 
- */
-void set_mat(matrix* m, int row_index, int col_index, int value) {
-	(m->matrix[row_index])[col_index] = value;
-}
-
-// Functions for basic operation
-vector* add(vector* a, vector* b) {
+void vector_add(vector* out, vector* a, vector* b) {
 	#ifdef ML_LIB_DEBUG_MODE
-	if (a->size != b->size) {
-		fprintf(stderr, "Vector addition with different vector lengths not allowed\n");
+	if (! (a->size == b->size && a->size == out->size) ) {
+		fprintf(stderr, "ERROR IN VECTOR ADDITION: Size mismatch\n");
 		exit(1);
+		// free to exit since when process ends, the virtual address space also is also terminated
+		// however, unsure of the situation when dealing with cuda
 	}
 	#endif
 	int n = a->size;
-	vector* c = init_vec(n);
-	for (int idx = 0; idx < n; idx++) {
-		set(c, idx, get(a, idx) + get(b, idx))
+	for (int i = 0; i < n; i++) {
+		out->v[i] = a->v[i] + b->v[i];
 	}
-	return c;
 }
 
-matrix* mult(matrix* a, matrix* b) {
+void matrix_add(matrix* out, matrix* a, matrix* b) {
 	#ifdef ML_LIB_DEBUG_MODE
-	if (a->col != b->row) {
-		fprintf(stderr, "Number of columns of first matrix does not match number of rows of second matrix\n");
+	if (! (a->number_of_rows == b->number_of_rows && a->number_of_rows == out->number_of_rows) ||
+		! (a->number_of_cols == b->number_of_cols && a->number_of_cols == out->number_of_cols) ) {
+		fprintf(stderr, "ERROR IN MATRIX ADDITION: Dimension mismatch\n");
 		exit(1);
 	}
 	#endif
-	int row = a->row;
-	int col = b->col;
-	int n = a->col;
-	matrix* c = init_mat(row, col);
+	size_t row = a->number_of_rows;
+	size_t col = a->number_of_cols;
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < col; j++) {
-			// c[i][j] = dot product of ith row of a and jth col of b (i.e sum over k of (a[i][k] * b[k][j]) )
-			number sum = 0;
-			for (int k = 0; k < n; k++) {
-				sum += get(a, i, k) * get(b, k, j);
-			}
-			set(c, i, j, sum);
+			out->m[i][j] = a->m[i][j] + b->m[i][j];
 		}
 	}
-	return c;
 }
 
-vector* mult(matrix* a, vector* b) {
+void matrix_mult(matrix* out, matrix* a, matrix* b) {
 	#ifdef ML_LIB_DEBUG_MODE
-	if (a->col != b->size) {
-		fprintf(stderr, "Number of columns of matrix does not match size of vector\n");
+	// Recall that matrix multiplication is valid only when a is (m, p) and b is (p, n)
+	// The resulting output is (m, n)
+	if (! (a->number_of_cols == b->number_of_rows && a->number_of_rows == out->number_of_rows
+			&& b->number_of_cols == out->number_of_cols) ) {
+		fprintf(stderr, "ERROR IN MATRIX MULTIPLICATION: Dimension mismatch\n");
 		exit(1);
 	}
 	#endif
-	int inner_size = b->size;
-	int size = a->row;
-	vector* v = init_vec(size);
-	for (int i = 0; i < size; i++) {
-		// v[i] = sum over j of (a[i][j] * b[j])
-		number sum = 0;
-		for (int j = 0; j < inner_size; j++) {
-			sum += get(a, i, j) * get(b, j);
+
+	size_t m = a->number_of_rows;
+	size_t n = b->number_of_cols;
+	size_t p = a->number_of_cols;
+
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			out->m[i][j] = 0;
+			for (int k = 0; k < p; k++) {
+				out->m[i][j] += a->m[i][k] * b->m[k][j];
+			}
 		}
-		set(v, i, sum);
 	}
 
-	return v;
+}
+
+void matrix_vector_mult(vector* out, matrix* a, vector* b) {
+	#ifdef ML_LIB_DEBUG_MODE
+	if (! (a->number_of_cols == b->size && a->number_of_rows == out->size) ) {
+		fprintf(stderr, "ERROR IN MATRIX VECTOR MULTIPLICATION: Dimension mismatch\n");
+		exit(1);
+	}
+	#endif
+
+	for (int i = 0; i < out->size; i++) {
+		out->v[i] = 0;
+		for (int j = 0; j < b->size; j++) {
+			out->v[i] += a->m[i][j] * b->v[j];
+		}
+	}
 }

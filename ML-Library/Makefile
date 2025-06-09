@@ -1,17 +1,18 @@
 CC=gcc
 LINK=gcc
 
-test: test.o matrix.o
-	$(LINK) test.o matrix.o -o test_library
+# Calling 'make' should invoke 'make library'
+all: library
 
-test.o: test/test.c
-	$(CC) -c test/test.c -o test.o
 
-mllib.o: src/mllib.c
-	$(CC) -c src/mllib.c -o mllib.o
+test: test.c libmymllib.so
+	$(CC) 
+
+library: matrix.o
+	gcc -shared -o libmymllib.so matrix.o
 
 matrix.o: src/math/matrix.c
-	$(CC) -c src/math/matrix.c -o matrix.o
+	$(CC) -Wall -fPIC -c src/math/matrix.c -o matrix.o
 
 clean:
-	rm mllib.o test.o test_library
+	rm libmymllib.so matrix.o

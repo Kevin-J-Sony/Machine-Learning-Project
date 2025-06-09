@@ -1,54 +1,38 @@
 #include "../mllib.h"
 
 
-#ifdef ML_LIB_DEBUG_MODE
-#include <stdio.h>
-#include <stdlib.h>
-#endif
-
-
 #ifndef MLLIB_MATRIX_H
 #define MLLIB_MATRIX_H
 
 // define a data type 'number' to take on float, double, or long double
-typedef double number;
+typedef float number;
 
-// define a basic vector data structure
+// define the basic vector data structures used for this project
+// since we are not using c++, we need to define vectors and matrices
 struct vector_ {
-    int size;
-    number* vector;
+	number* v;
+	size_t size;
 };
 typedef struct vector_ vector;
 
-
 struct matrix_ {
-    int row;
-    int col;
-    number** matrix;
+	number** m;
+	size_t number_of_rows;
+	size_t number_of_cols;
 };
 typedef struct matrix_ matrix;
 
+// basic data structure functions
+vector* init_vec(size_t size);
+void del_vec(vector* mat);
 
-// Functions to initialize vectors and matrices
-vector* init_vec(int length);
-matrix* init_mat(int row, int col);
+matrix* init_mat(size_t row, size_t col);
+void del_mat(matrix* mat);
 
-// Functions to deallocate vectors and matrices
-void free_vec(vector* v);
-void free_mat(matrix* m);
-
-// Get functions
-number get_vec(vector* v, int index);
-number get_mat(matrix* m, int row_index, int col_index);
-
-// Set functions
-void set_vec(vector* v, int index, int value);
-void set_mat(matrix* m, int row_index, int col_index, int value);
-
-// Functions for basic operation
-vector* add(vector* a, vector* b);
-matrix* mult(matrix* a, matrix* b);
-vector* mult(matrix* a, vector* b);
-
+// basic math functions required
+void vector_add(vector* out, vector* a, vector* b);
+void matrix_add(matrix* out, matrix* a, matrix* b);
+void matrix_mult(matrix* out, matrix* a, matrix* b);
+void matrix_vector_mult(vector* out, matrix* a, vector* b);
 
 #endif
