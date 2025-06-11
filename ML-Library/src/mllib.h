@@ -16,6 +16,7 @@ typedef int boolean;
 #ifdef ML_LIB_DEBUG_MODE
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #endif
 
 

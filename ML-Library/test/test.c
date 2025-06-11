@@ -2,6 +2,7 @@
  * 		Testing various methods in ML-Library
  */
 #include "../src/math/matrix.h"
+#include "../src/processing/batch.h"
 
 void print_mat(matrix* mat) {
 	size_t nrows = mat->number_of_rows;
@@ -32,7 +33,18 @@ void print_vec(vector* vec) {
 	fprintf(stdout, "\n");
 }
 
+void print_batch(batch* bat) {
+	size_t size = bat->number_of_batches;
+	s_batch* sb = bat->batches;
+
+	fprintf(stdout, "Batch info\n----------\n");
+	fprintf(stdout, "Size of batch: %d \n", size);
+}
+
+
 void test_mat_add() {
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX ADDITION\n--------------------\n");
+
 	matrix* mat1 = init_mat(4, 4);
 	matrix* mat2 = init_mat(4, 4);
 
@@ -48,9 +60,18 @@ void test_mat_add() {
 	print_mat(mat1);
 	print_mat(mat2);
 	print_mat(mat3);
+
+	del_mat(mat1);
+	del_mat(mat2);
+	del_mat(mat3);
+
+	fprintf(stdout, "\n--------------------\nEND TESTING OF MATRIX ADDITION\n--------------------\n");
+
 }
 
 void test_mat_mult() {
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX MULTIPLICATION\n--------------------\n");
+
 	matrix* mat1 = init_mat(3, 4);
 	matrix* mat2 = init_mat(4, 3);
 
@@ -68,9 +89,17 @@ void test_mat_mult() {
 	print_mat(mat1);
 	print_mat(mat2);
 	print_mat(mat3);
+
+	del_mat(mat1);
+	del_mat(mat2);
+	del_mat(mat3);
+
+	fprintf(stdout, "\n--------------------\nEND TESTING OF MATRIX MULTIPLICATION\n--------------------\n");
 }
 
 void test_mat_vec_mult() {
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX-VECTOR MULTIPLICATION\n--------------------\n");
+
 	matrix* mat = init_mat(3, 4);
 	vector* vec = init_vec(4);
 
@@ -88,26 +117,48 @@ void test_mat_vec_mult() {
 	print_vec(vec);
 	print_mat(mat);
 	print_vec(out);
+
+	del_vec(vec);
+	del_mat(mat);
+	del_vec(out);
+
+	fprintf(stdout, "\n--------------------\nEND TESTING OF MATRIX-VECTOR MULTIPLICATION\n--------------------\n");
+
+}
+
+void test_batch() {
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF BATCH OPERATIONS\n--------------------\n");
+
+	vector** inputs = (vector **)malloc(10 * sizeof(vector *));
+	number tally = 1;
+	for (int i = 0; i < 10; i++) {
+		inputs[i] = init_vec(10);
+		for (int j = 0; j < 10; j++) {
+			(inputs[i]->v)[j] = tally++;
+		}
+		print_vec(inputs[i]);
+	}
+
+	batch* new_batch = create_batch(inputs, 10, 1);
+	
+
+	for (int i = 0; i < 10; i++) {
+		del_vec(inputs[i]);
+	}
+	free(inputs);
+
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF BATCH OPERATIONS\n--------------------\n");
 }
 
 int main() {
-	srand(10);
+	srand(10);	// set the seed to reproduce results
 
 	fprintf(stdout, "\n\nBEGIN TESTING\n\n");
 
-
-
-	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX ADDITION\n--------------------\n");
-	test_mat_add();
-	fprintf(stdout, "\n--------------------\nEND TESTING OF MATRIX ADDITION\n--------------------\n");
-
-	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX MULTIPLICATION\n--------------------\n");
-	test_mat_mult();
-	fprintf(stdout, "\n--------------------\nEND TESTING OF MATRIX MULTIPLICATION\n--------------------\n");
-
-	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX-VECTOR MULTIPLICATION\n--------------------\n");
-	test_mat_vec_mult();
-	fprintf(stdout, "\n--------------------\nEND TESTING OF MATRIX-VECTOR MULTIPLICATION\n--------------------\n");
+	// test_mat_add();
+	// test_mat_mult();
+	// test_mat_vec_mult();
+	test_batch();
 
 	fprintf(stdout, "\n\nEND TESTING\n\n");
 	return 0;
