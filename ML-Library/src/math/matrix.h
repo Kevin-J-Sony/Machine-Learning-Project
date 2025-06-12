@@ -16,7 +16,7 @@ struct vector_ {
 typedef struct vector_ vector;
 
 struct matrix_ {
-	number** m;
+	number* m;
 	size_t number_of_rows;
 	size_t number_of_cols;
 };
