@@ -26,6 +26,11 @@ batch* create_empty_batch(size_t number_of_vectors, size_t vec_size);
 void delete_batch(batch* batch_to_delete);
 void load_data_into_batch(batch* empty_batch, vector** huge_number_of_data, size_t number_of_data);
 
+/**
+ * Initialize many batches from one huge input
+ */
+m_batch* load_data_into_batches(vector** huge_number_of_data, size_t number_of_data, size_t batch_size);
+void delete_batches(m_batch* many_batches);
 
 /**
  * Batch operations

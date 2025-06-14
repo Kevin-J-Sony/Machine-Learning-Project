@@ -32,7 +32,7 @@ void nonlinear_transform_derivative(batch* output, batch* input);
 /**
  * Training and testing of the neural network
  */
-void train(ann* neural_network, batch* training_input, batch* training_output);
+void train(ann* neural_network, m_batch* training_input, m_batch* training_output);
 void test(ann* neural_network, batch* testing_input, batch* testing_output);
 
 

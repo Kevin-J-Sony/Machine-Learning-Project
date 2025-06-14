@@ -22,16 +22,21 @@ struct matrix_ {
 };
 typedef struct matrix_ matrix;
 
+#define VALUE_AT(mat, i, j) mat->m[i * mat->number_of_cols + j]
+
 // basic data structure functions
 vector* init_vec(size_t size);
 void del_vec(vector* mat);
 
-matrix* init_mat(size_t row, size_t col);
+matrix* init_mat(size_t nrows, size_t ncols);
 void del_mat(matrix* mat);
 
 // basic math functions required
 void vector_add(vector* out, vector* a, vector* b);
 void matrix_add(matrix* out, matrix* a, matrix* b);
+void vector_sub(vector* out, vector* a, vector* b);
+void matrix_sub(matrix* out, matrix* a, matrix* b);
+
 void vector_scale(vector* out, vector* in, number scale);
 void matrix_scale(matrix* out, matrix* in, number scale);
 
@@ -39,5 +44,10 @@ void matrix_mult(matrix* out, matrix* a, matrix* b);
 void matrix_vector_mult(vector* out, matrix* a, vector* b);
 void add_vector_to_matrix(matrix* out, matrix* mat, vector* vec);
 void matrix_entrywise_product(matrix* out, matrix* product_one, matrix* product_two);
+
+// basic matrix operations
+void matrix_transpose(matrix* out, matrix* in);
+void matrix_col_sum(vector* out, matrix* in);
+void copy_matrix(matrix* out, matrix* in);
 
 #endif
