@@ -32,7 +32,12 @@ void del_mat(matrix* mat);
 // basic math functions required
 void vector_add(vector* out, vector* a, vector* b);
 void matrix_add(matrix* out, matrix* a, matrix* b);
+void vector_scale(vector* out, vector* in, number scale);
+void matrix_scale(matrix* out, matrix* in, number scale);
+
 void matrix_mult(matrix* out, matrix* a, matrix* b);
 void matrix_vector_mult(vector* out, matrix* a, vector* b);
+void add_vector_to_matrix(matrix* out, matrix* mat, vector* vec);
+void matrix_entrywise_product(matrix* out, matrix* product_one, matrix* product_two);
 
 #endif

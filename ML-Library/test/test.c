@@ -8,10 +8,10 @@
 void print_mat(matrix* mat) {
 	size_t nrows = mat->number_of_rows;
 	size_t ncols = mat->number_of_cols;
-	number** m = mat->m;
+	number* m = mat->m;
 
 	fprintf(stdout, "----------\nMatrix info\n");
-	fprintf(stdout, "Number of rows: %d \t Number of columns: %d\n", nrows, ncols);
+	fprintf(stdout, "Number of rows: %lu \t Number of columns: %lu\n", nrows, ncols);
 
 	for (int i = 0; i < nrows; i++) {
 		for (int j = 0; j < ncols; j++) {
@@ -26,7 +26,7 @@ void print_vec(vector* vec) {
 	number* v = vec->v;
 
 	fprintf(stdout, "----------\nVector info\n");
-	fprintf(stdout, "Size of vector: %d \n", size);
+	fprintf(stdout, "Size of vector: %lu \n", size);
 
 	for (int i = 0; i < size; i++) {
 		fprintf(stdout, "%f ", v[i]);
@@ -35,16 +35,18 @@ void print_vec(vector* vec) {
 }
 
 void print_batch(batch* bat) {
-	size_t size = bat->number_of_batches;
-	s_batch* sb = bat->batches;
+	size_t size = bat->number_of_vectors;
+	matrix* data = bat->data;
 
 	fprintf(stdout, "----------\nBatch info\n");
-	fprintf(stdout, "Number of batches: %d \n", size);
+	fprintf(stdout, "Number of vectors: %lu \n", size);
 
-	for (int i = 0; i < size; i++) {
-		size_t batch_size = sb[i].number_of_inputs;
-		
-		fprintf(stdout, "Size of batch %d: %d\n", i+1, batch_size);
+	for (int i = 0; i < size; i++) {		
+		fprintf(stdout, "Vector %d: ", i+1);
+		for (int j = 0; j < bat->vector_size; j++) {
+			fprintf(stdout, "%f ", data->m[j * size + i]);
+		}
+		fprintf(stdout, "\n");
 	}
 }
 
@@ -158,25 +160,90 @@ void test_mat_vec_mult() {
 void test_batch() {
 	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF BATCH OPERATIONS\n--------------------\n");
 
-	vector** inputs = (vector **)malloc(10 * sizeof(vector *));
+	size_t number_of_inputs = 4;
+	size_t size_of_inputs = 4;
+	vector** inputs = (vector **)malloc(number_of_inputs * sizeof(vector *));
 	number tally = 1;
-	for (int i = 0; i < 10; i++) {
-		inputs[i] = init_vec(10);
-		for (int j = 0; j < 10; j++) {
-			(inputs[i]->v)[j] = tally++;
+	for (int i = 0; i < number_of_inputs; i++) {
+		inputs[i] = init_vec(size_of_inputs);
+		for (int j = 0; j < size_of_inputs; j++) {
+			(inputs[i]->v)[j] = tally;
 		}
 	}
 
-	batch* new_batch = create_batch(inputs, 10, 1);
-	
-	delete_batch(new_batch);
+	batch* input_batch = create_empty_batch(number_of_inputs, size_of_inputs);
+	load_data_into_batch(input_batch, inputs, number_of_inputs);
+	print_batch(input_batch);
 
-	for (int i = 0; i < 10; i++) {
+	size_t size_of_outputs = 5;
+	matrix* mat = init_mat(size_of_outputs, size_of_inputs);
+	tally = 1;
+	for (int i = 0; i < size_of_outputs; i++) {
+		for (int j = 0; j < size_of_inputs; j++) {
+			mat->m[i * size_of_inputs + j] = tally++;
+		}
+	}
+
+	print_mat(mat);
+
+	batch* output_batch = create_empty_batch(number_of_inputs, size_of_outputs);
+	print_batch(output_batch);
+
+	del_mat(mat);
+	delete_batch(input_batch);
+	delete_batch(output_batch);
+
+	for (int i = 0; i < number_of_inputs; i++) {
 		del_vec(inputs[i]);
 	}
 	free(inputs);
 
-	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF BATCH OPERATIONS\n--------------------\n");
+	fprintf(stdout, "\n--------------------\nEND TESTING OF BATCH OPERATIONS\n--------------------\n");
+}
+
+
+void test_ann() {
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF NEURAL NETWORK INITIALIZATION AND PASS THROUGH\n--------------------\n");
+
+	size_t number_of_inputs = 4;
+	size_t size_of_inputs = 4;
+	vector** inputs = (vector **)malloc(number_of_inputs * sizeof(vector *));
+	number tally = 1;
+	for (int i = 0; i < number_of_inputs; i++) {
+		inputs[i] = init_vec(size_of_inputs);
+		for (int j = 0; j < size_of_inputs; j++) {
+			(inputs[i]->v)[j] = tally;
+		}
+	}
+
+	batch* input_batch = create_empty_batch(number_of_inputs, size_of_inputs);
+	load_data_into_batch(input_batch, inputs, number_of_inputs);
+	print_batch(input_batch);
+
+	size_t size_of_outputs = 5;
+	matrix* mat = init_mat(size_of_outputs, size_of_inputs);
+	tally = 1;
+	for (int i = 0; i < size_of_outputs; i++) {
+		for (int j = 0; j < size_of_inputs; j++) {
+			mat->m[i * size_of_inputs + j] = tally++;
+		}
+	}
+
+	print_mat(mat);
+
+	batch* output_batch = create_empty_batch(number_of_inputs, size_of_outputs);
+	print_batch(output_batch);
+
+	del_mat(mat);
+	delete_batch(input_batch);
+	delete_batch(output_batch);
+
+	for (int i = 0; i < number_of_inputs; i++) {
+		del_vec(inputs[i]);
+	}
+	free(inputs);
+
+	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF NEURAL NETWORK INITIALIZATION AND PASS THROUGH\n--------------------\n");
 }
 
 
@@ -191,11 +258,41 @@ int main() {
 	// test_batch();
 
 	size_t* sizes = (size_t *)calloc(3, sizeof(size_t));
-	sizes[0] = 2; sizes[1] = 3; sizes[2] = 1;
+	sizes[0] = 4; sizes[1] = 4; sizes[2] = 4;
 	ann* nn = initialize_ann(sizes, 3);
-	print_network(nn);
+	// print_network(nn);
 	free(sizes);
 
+
+	// Create some batches of inputs
+	batch* batch_input = create_empty_batch(16, 4);
+	batch* batch_output = create_empty_batch(16, 4);
+
+	vector** data = (vector **) calloc(16, sizeof(vector *));
+	
+	for (int i = 0; i < 16; i++) {
+		data[i] = init_vec(4);
+		int t = i;
+		for (int j = 0; j < 4; j++) {
+			data[i]->v[j] = t % 2;
+			t = t >> 1;
+		}
+	}
+
+	load_data_into_batch(batch_input, data, 16);
+	load_data_into_batch(batch_output, data, 16);
+
+	train(nn, batch_input, batch_output);
+
+	delete_batch(batch_input);
+	delete_batch(batch_output);
+
+	for (int i = 0; i < 16; i++) {
+		del_vec(data[i]);
+	}
+	free(data);
+
+	deallocate_ann(nn);
 	fprintf(stdout, "\n\nEND TESTING\n\n");
 	return 0;
 }
