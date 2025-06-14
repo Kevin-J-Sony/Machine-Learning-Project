@@ -149,7 +149,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 	size_t number_of_layers = neural_network->number_of_layers;
 
 
-	int nloops = 1;
+	int nloops = 2;
 	int idx = 0;
 	int curr_nloops = 0;
 	while (curr_nloops < nloops * many_batches_training_input->number_of_batches) {
@@ -220,7 +220,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 
 			// y_i = f(z_i)
 			// nonlinear_transform(y_intermediate_outputs[1], z_intermediate_outputs[1]);
-			nonlinear_transform_mat(y_intermediate_outputs[1], z_intermediate_outputs[1]);
+			nonlinear_transform_mat(y_intermediate_outputs[i], z_intermediate_outputs[i]);
 		}
 
 		#ifdef ML_LIB_DEBUG_MODE
@@ -257,7 +257,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 
 			// dy/dz = f'(y_intermediates_outputs[j - 1]) or f'(x)
 			// nonlinear_transform_derivative(dy_dz, y_intermediate_outputs[j - 1]);
-			nonlinear_transform_derivative_mat(dy_dz, y_intermediate_outputs[j - 1]);
+			nonlinear_transform_derivative_mat(dy_dz, z_intermediate_outputs[j - 1]);
 
 			// dE/dz = dE/dy . dy/dz
 			// batch_hadamard_product(dE_dz, dE_dy, dy_dz);
@@ -270,19 +270,23 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 			matrix_transpose(x_intermediate_transpose, y_intermediate_outputs[j - 1]);
 			matrix_scale(x_intermediate_transpose, x_intermediate_transpose, neural_network->gamma);
 			matrix_mult(grad_w, dE_dz, x_intermediate_transpose);
-			fprintf(stdout, "----------\n");
-			for (int i = 0; i < y_intermediate_outputs[j - 1]->number_of_rows; i++) {
-				for (int j = 0; j < y_intermediate_outputs[j - 1]->number_of_cols; j++) {
-					fprintf(stdout, "%f ", VALUE_AT(y_intermediate_outputs[j - 1], i, j));
-				}
-				fprintf(stdout, "\n");
-			}
-			fprintf(stdout, "----------\n");
 			del_mat(x_intermediate_transpose);
 
 			matrix_col_sum(grad_b, dE_dz);
 			vector_scale(grad_b, grad_b, neural_network->gamma / io_number_of_vectors);
-			
+			fprintf(stdout, "----------\n");
+			for (int x = 0; x < grad_w->number_of_rows; x++) {
+				for (int y = 0; y < grad_w->number_of_cols; y++) {
+					fprintf(stdout, "%f ", VALUE_AT(grad_w, x, y));
+				}
+				fprintf(stdout, "\n");
+			}
+			fprintf(stdout, "----------\n");
+			for (int x = 0; x < grad_b->size; x++) {
+				fprintf(stdout, "%f ", grad_b->v[x]);
+			}
+			fprintf(stdout, "\n----------\n");
+
 			
 			// update weights and biases
 			// auxillary_function_three(neural_network->weights[j], grad_w);
