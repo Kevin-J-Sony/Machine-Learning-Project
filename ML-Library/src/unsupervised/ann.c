@@ -32,7 +32,7 @@ ann* initialize_ann(size_t* sizes, size_t number_of_layers) {
 	}
 	neural_network->layers[number_of_layers - 1] = sizes[number_of_layers - 1];
 	neural_network->number_of_layers = number_of_layers;
-	neural_network->gamma = 0.4;
+	neural_network->gamma = 0.001;
 
 	return neural_network;
 }
@@ -156,10 +156,10 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 	size_t number_of_layers = neural_network->number_of_layers;
 
 
-	int nloops = 1;
+	int nloops = 100;
 	int idx = 0;
 	int curr_nloops = 0;
-	while (curr_nloops < nloops * 2) { //many_batches_training_input->number_of_batches
+	while (curr_nloops < nloops * many_batches_training_input->number_of_batches) { //many_batches_training_input->number_of_batches
 		batch* training_input = many_batches_training_input->ray_of_batches[idx % many_batches_training_input->number_of_batches];
 		batch* training_output = many_batches_training_output->ray_of_batches[idx % many_batches_training_output->number_of_batches];
 		idx = idx + 1;
@@ -237,8 +237,6 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 		// batch* layer_output = training_output;
 		matrix* layer_output = training_output->data;
 		for (int j = number_of_layers - 1; j > 0; j--) {
-			fprintf(stdout, "j: %d\n", j);
-
 			matrix* dE_dy = init_mat(layer_output->number_of_rows,layer_output->number_of_cols);
 			matrix* dy_dz = init_mat(layer_output->number_of_rows,layer_output->number_of_cols);
 			matrix* dE_dz = init_mat(layer_output->number_of_rows,layer_output->number_of_cols);
@@ -316,6 +314,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 				layer_output = init_mat(dE_dx->number_of_rows, dE_dx->number_of_cols);
 				copy_matrix(layer_output, dE_dx);
 
+				/*
 				fprintf(stdout, "----------\ndE/dx\n");
 				for (int x = 0; x < dE_dx->number_of_rows; x++) {
 					for (int y = 0; y < dE_dx->number_of_cols; y++) {
@@ -324,6 +323,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 					fprintf(stdout, "\n");
 				}
 				fprintf(stdout, "----------\n");
+				*/
 				
 				// ;ADFJSLKFDSAIOFJPASDJFLKSAD;NJFAPSLDI
 				// THIS WAS THE PROBLEM!!!!!
