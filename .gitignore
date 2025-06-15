@@ -1,2 +1,6 @@
 .vscode
-ML-Application/
+ML-Application/__pycache__
+ML-Application/test/__pycache__
+ML-Application/nn.py
+ML-Library/*.txt
+ML-Library/*.o

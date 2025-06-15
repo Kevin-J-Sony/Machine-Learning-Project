@@ -11,6 +11,9 @@ test: library
 library: matrix.o batch.o ann.o
 	gcc -shared -o libmymllib.so matrix.o batch.o ann.o
 
+static_library: matrix.o batch.o ann.o
+	ar rcs staticmllib.a matrix.o batch.o ann.o
+
 matrix.o: src/math/matrix.c
 	$(CC) -Wall -g -fPIC -c src/math/matrix.c -o matrix.o
 

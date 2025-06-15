@@ -23,9 +23,9 @@ ann* initialize_ann(size_t* sizes, size_t number_of_layers) {
 
 		for (int j = 0; j < sizes[i + 1]; j++) {
 			for (int k = 0; k < sizes[i]; k++) {
-				VALUE_AT(neural_network->weights[i], j, k) = 1;
+				VALUE_AT(neural_network->weights[i], j, k) = 0.5 + 0.5 * ((float)rand())/(RAND_MAX); //1;
 			}
-			neural_network->biases[i]->v[j] = 1;
+			neural_network->biases[i]->v[j] = 0.5 + 0.5 * ((float)rand())/(RAND_MAX); //1;
 		}
 
 		neural_network->layers[i] = sizes[i];
@@ -52,26 +52,7 @@ void deallocate_ann(ann* neural_network) {
 
 
 /**
- * Leaky ReLU for nonlinear transformation. Applied to all entries
- */
-void nonlinear_transform(batch* output, batch* input) {
-	#ifdef ML_LIB_DEBUG_MODE
-	if ( (output->vector_size != input->vector_size) || (output->number_of_vectors != input->number_of_vectors)) {
-		fprintf(stderr, "ERROR IN NONLINEAR TRANSFORM: output batch does not match input batch");
-		exit(EXIT_FAILURE);
-	}
-	#endif
-
-	for (int i = 0; i < input->vector_size; i++) {
-		for (int j = 0; j < input->number_of_vectors; j++) {
-			number entry = input->data->m[i * input->number_of_vectors + j];
-			output->data->m[i * input->number_of_vectors + j] = (entry > 0) ? entry : (0.1 * entry);
-		}
-	}
-}
-
-/**
- * Leaky ReLU for nonlinear transformation applied on matrix instead of batch. Applied to all entries
+ * Leaky ReLU for nonlinear transformation applied on matrix. Applied to all entries
  */
 void nonlinear_transform_mat(matrix* output, matrix* input) {
 	#ifdef ML_LIB_DEBUG_MODE
@@ -90,33 +71,12 @@ void nonlinear_transform_mat(matrix* output, matrix* input) {
 }
 
 /**
- * Derivative of Leaky ReLU. Applied to all entries
- */
-void nonlinear_transform_derivative(batch* output, batch* input) {
-	#ifdef ML_LIB_DEBUG_MODE
-	if ( (output->vector_size != input->vector_size) || (output->number_of_vectors != input->number_of_vectors)) {
-		fprintf(stderr, "ERROR IN NONLINEAR TRANSFORM DERIVATIVE DERIVATIVE: output batch does not match input batch");
-		exit(EXIT_FAILURE);
-	}
-	#endif
-
-	for (int i = 0; i < input->vector_size; i++) {
-		for (int j = 0; j < input->number_of_vectors; j++) {
-			number entry = input->data->m[i * input->number_of_vectors + j];
-			output->data->m[i * input->number_of_vectors + j] = (entry > 0) ? 1.0 : 0.1;
-		}
-	}
-}
-
-/**
- * Derivative of Leaky ReLU applied on matrix instead of batch. Applied to all entries
+ * Derivative of Leaky ReLU applied on matrix. Applied to all entries
  */
 void nonlinear_transform_derivative_mat(matrix* output, matrix* input) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if ( (output->number_of_cols != input->number_of_cols) || (output->number_of_rows != input->number_of_rows)) {
 		fprintf(stderr, "ERROR IN NONLINEAR TRANSFORM DERIVATIVE: output batch does not match input batch.\n");
-		fprintf(stderr, "output: (%lu x %lu)\n", output->number_of_rows, output->number_of_cols);
-		fprintf(stderr, "input: (%lu x %lu)\n", input->number_of_rows, input->number_of_cols);
 		exit(EXIT_FAILURE);
 	}
 	#endif
@@ -148,6 +108,13 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 		fprintf(stderr, "ANN TRAINING ERROR: Size of outputs does not match output layer of neural network\n");
 		exit(EXIT_FAILURE);
 	}
+	for (int i = 0; i < many_batches_training_input->number_of_batches; i++) {
+		if ((many_batches_training_input->ray_of_batches[0]->number_of_vectors != many_batches_training_input->ray_of_batches[i]->number_of_vectors) ||
+			(many_batches_training_output->ray_of_batches[0]->number_of_vectors != many_batches_training_output->ray_of_batches[i]->number_of_vectors)) {
+			fprintf(stderr, "ANN TRAINING ERROR: Inconsistent batch sizes.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 	#endif
 
 	// store weights and biases
@@ -155,6 +122,27 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 	// vector** biases = neural_network->biases;
 	size_t number_of_layers = neural_network->number_of_layers;
 
+	matrix** linear_intermediate_outputs;
+	matrix** z_intermediate_outputs;
+	matrix** y_intermediate_outputs;
+
+	#ifdef ML_LIB_DEBUG_MODE
+	linear_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
+	y_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
+	z_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
+	#else
+	linear_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
+	y_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
+	z_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
+	#endif
+
+	size_t io_number_of_vectors = many_batches_training_input->ray_of_batches[0]->number_of_vectors;
+
+	for (int i = 0; i < number_of_layers; i++) {
+		linear_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
+		z_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
+		y_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
+	}
 
 	int nloops = 100;
 	int idx = 0;
@@ -163,29 +151,6 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 		batch* training_input = many_batches_training_input->ray_of_batches[idx % many_batches_training_input->number_of_batches];
 		batch* training_output = many_batches_training_output->ray_of_batches[idx % many_batches_training_output->number_of_batches];
 		idx = idx + 1;
-
-		matrix** linear_intermediate_outputs;
-		matrix** z_intermediate_outputs;
-		matrix** y_intermediate_outputs;
-
-		size_t io_number_of_vectors = training_input->number_of_vectors;
-
-		#ifdef ML_LIB_DEBUG_MODE
-		linear_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
-		y_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
-		z_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
-		#else
-		linear_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
-		y_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
-		z_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
-		#endif
-
-
-		for (int i = 0; i < number_of_layers; i++) {
-			linear_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
-			z_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
-			y_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
-		}
 
 		// copy training_input into y_intermediate_outputs[0]
 		// to make y_0 == x_1
@@ -223,14 +188,18 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 
 		#ifdef ML_LIB_DEBUG_MODE
 		// calculate error
-		number sum = 0;
+		number total_error = 0;
 		for (int x = 0; x < training_output->data->number_of_rows; x++) {
 			for (int y = 0; y < training_output->data->number_of_cols; y++) {
-				sum += (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y)) * (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y));
+				total_error += (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y)) * (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y));
 			}
 		}
-		sum /= io_number_of_vectors;
-		fprintf(stdout, "Error so far: %f\n", sum);
+		total_error /= io_number_of_vectors;
+		fprintf(stdout, "Error so far: %f\n", total_error);
+		
+		if (total_error / 5000 < neural_network->gamma) {
+			neural_network->gamma /= 2;
+		}
 		#endif
 
 		// backward propagation
@@ -330,6 +299,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 				// layer_output = y_intermediate_outputs[j - 1];
 
 				// delete_batch(dE_dx);
+				del_mat(weight_transpose);
 				del_mat(dE_dx);
 			} else {
 				// delete final layer matrix
@@ -343,22 +313,21 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 			
 			del_mat(grad_w);
 			del_vec(grad_b);
-		}
-
-		// delete the intermediate batches
-		for (int i = 0; i < neural_network->number_of_layers; i++) {
-			del_mat(linear_intermediate_outputs[i]);
-			del_mat(z_intermediate_outputs[i]);
-			del_mat(y_intermediate_outputs[i]);
-		}
-		free(linear_intermediate_outputs);
-		free(z_intermediate_outputs);
-		free(y_intermediate_outputs);
-		
+		}		
 
 		curr_nloops++;
 	}
 
+	// delete the intermediate batches
+	// this only works if the batch_size for all batches are the same
+	for (int i = 0; i < neural_network->number_of_layers; i++) {
+		del_mat(linear_intermediate_outputs[i]);
+		del_mat(z_intermediate_outputs[i]);
+		del_mat(y_intermediate_outputs[i]);
+	}
+	free(linear_intermediate_outputs);
+	free(z_intermediate_outputs);
+	free(y_intermediate_outputs);
 
 }
 
@@ -375,31 +344,65 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 
 
 
+batch* pass_forward(ann* neural_network, batch* inputs) {
+	#ifdef ML_LIB_DEBUG_MODE
+	if (inputs->vector_size != neural_network->layers[0]) {
+		fprintf(stderr, "ANN PASS FORWARD: Size of inputs do not match input layer of neural network\n");
+		exit(EXIT_FAILURE);
+	}
+	#endif
 
+	batch* predictions = create_empty_batch(inputs->number_of_vectors, inputs->vector_size);
+	size_t io_number_of_vectors = inputs->number_of_vectors;
 
+	matrix** linear_intermediate_outputs;
+	matrix** z_intermediate_outputs;
+	matrix** y_intermediate_outputs;
 
+	size_t number_of_layers = neural_network->number_of_layers;
 
+	#ifdef ML_LIB_DEBUG_MODE
+	linear_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
+	y_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
+	z_intermediate_outputs = (matrix **)calloc(neural_network->number_of_layers, sizeof(matrix *));
+	#else
+	linear_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
+	y_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
+	z_intermediate_outputs = (matrix **)malloc(neural_network->number_of_layers * sizeof(matrix *));
+	#endif
 
+	for (int i = 0; i < number_of_layers; i++) {
+		linear_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
+		z_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
+		y_intermediate_outputs[i] = init_mat(neural_network->layers[i], io_number_of_vectors);
+	}
 
+	copy_matrix(y_intermediate_outputs[0], inputs->data);
 
+	// forward propagation
+	for (int i = 1; i < number_of_layers; i++) {
+		// l_i = W*x_i where (x_i == y_{i - 1})
+		matrix_mult(linear_intermediate_outputs[i], neural_network->weights[i - 1], y_intermediate_outputs[i - 1]);
 
-/* 	AUXILLARY FUNCTIONS FOR THE TRAINING AND TESTING OF ARTIFICIAL NEURAL NETWORKS.  */
+		// z_i = l_i + b_i
+		add_vector_to_matrix(z_intermediate_outputs[i], linear_intermediate_outputs[i], neural_network->biases[i - 1]);
 
+		// y_i = f(z_i)
+		nonlinear_transform_mat(y_intermediate_outputs[i], z_intermediate_outputs[i]);
+	}
 
+	copy_matrix(predictions->data, y_intermediate_outputs[number_of_layers - 1]);
 
+	// delete the intermediate batches
+	// this only works if the batch_size for all batches are the same
+	for (int i = 0; i < neural_network->number_of_layers; i++) {
+		del_mat(linear_intermediate_outputs[i]);
+		del_mat(z_intermediate_outputs[i]);
+		del_mat(y_intermediate_outputs[i]);
+	}
+	free(linear_intermediate_outputs);
+	free(z_intermediate_outputs);
+	free(y_intermediate_outputs);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	return predictions;
+}

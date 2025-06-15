@@ -26,14 +26,14 @@ void deallocate_ann(ann* neural_network);
 /**
  * Nonlinear functions and derivatives
  */
-void nonlinear_transform(batch* output, batch* input);
-void nonlinear_transform_derivative(batch* output, batch* input);
+void nonlinear_transform_mat(matrix* output, matrix* input);
+void nonlinear_transform_derivative_mat(matrix* output, matrix* input);
 
 /**
  * Training and testing of the neural network
  */
 void train(ann* neural_network, m_batch* training_input, m_batch* training_output);
-void test(ann* neural_network, batch* testing_input, batch* testing_output);
+void test(ann* neural_network, m_batch* testing_input, m_batch* testing_output);
 
 
 #endif

@@ -161,9 +161,6 @@ void matrix_mult(matrix* out, matrix* a, matrix* b) {
 	if (! (a->number_of_cols == b->number_of_rows && a->number_of_rows == out->number_of_rows
 			&& b->number_of_cols == out->number_of_cols) ) {
 		fprintf(stderr, "ERROR IN MATRIX MULTIPLICATION: Dimension mismatch\n");
-		fprintf(stderr, "out: (%lu x %lu)\n", out->number_of_rows, out->number_of_cols);
-		fprintf(stderr, "a: (%lu x %lu)\n", a->number_of_rows, a->number_of_cols);
-		fprintf(stderr, "b: (%lu x %lu)\n", b->number_of_rows, b->number_of_cols);
 		exit(EXIT_FAILURE);
 	}
 	#endif
