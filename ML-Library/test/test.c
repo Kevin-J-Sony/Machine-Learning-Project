@@ -241,9 +241,9 @@ void test_batch_mat_mult() {
 void test_ann() {
 	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF NEURAL NETWORK INITIALIZATION AND PASS THROUGH\n--------------------\n");
 
-	size_t* sizes = (size_t *)calloc(3, sizeof(size_t));
-	sizes[0] = 4; sizes[1] = 4; sizes[2] = 4;
-	ann* nn = initialize_ann(sizes, 3);
+	size_t* sizes = (size_t *)calloc(4, sizeof(size_t));
+	sizes[0] = 4; sizes[1] = 6; sizes[2] = 7; sizes[3] = 4;
+	ann* nn = initialize_ann(sizes, 4);
 	// print_network(nn);
 	free(sizes);
 
@@ -282,10 +282,10 @@ void test_ann() {
 	// load_data_into_batch(mb_input->ray_of_batches[0], data, 16);
 	// load_data_into_batch(mb_output->ray_of_batches[0], data, 16);
 
-	m_batch* mb_input = load_data_into_batches(data, 16, 16);
-	m_batch* mb_output = load_data_into_batches(data, 16, 16);
-	print_many_batches(mb_input);
-	print_many_batches(mb_output);
+	m_batch* mb_input = load_data_into_batches(data, 16, 2);
+	m_batch* mb_output = load_data_into_batches(data, 16, 2);
+	//print_many_batches(mb_input);
+	//print_many_batches(mb_output);
 
 	train(nn, mb_input, mb_output);
 	// print_network(nn);
