@@ -15,7 +15,7 @@ def read_train_data(number_of_data):
             raw_number[i] = a / 256
         raw_numbers.append(raw_number)
 
-    file.close
+    file.close()
 
     file = open("../data/train-labels.idx1-ubyte", 'rb')
     a = file.read(4)

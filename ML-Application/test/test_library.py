@@ -41,7 +41,7 @@ class ArtificialNeuralNetwork(ctypes.Structure):
     ]
 
 # Load the dynamic library
-lib = ctypes.CDLL(r"../lib/train.dll")
+lib = ctypes.CDLL(r"../lib/libmymllib.so")
 
 # --- Function prototypes ---
 lib.initialize_ann.argtypes = [ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t]
@@ -59,7 +59,8 @@ lib.delete_batches.restype = None
 lib.train.argtypes = [
     ctypes.POINTER(ArtificialNeuralNetwork),
     ctypes.POINTER(ManyBatches),
-    ctypes.POINTER(ManyBatches)
+    ctypes.POINTER(ManyBatches),
+    ctypes.c_size_t
 ]
 lib.train.restype = None
 
@@ -87,13 +88,14 @@ def load_data_into_batches(data: list[list[float]], num_data: int, num_batches: 
 
 def train(ann: ctypes.POINTER(ArtificialNeuralNetwork),
           inputs: ctypes.POINTER(ManyBatches),
-          outputs: ctypes.POINTER(ManyBatches)) -> None:
-    lib.train(ann, inputs, outputs)
+          outputs: ctypes.POINTER(ManyBatches),
+          loops: ctypes.c_size_t) -> None:
+    lib.train(ann, inputs, outputs, loops)
 
 
 def pass_forward(ann: ctypes.POINTER(ArtificialNeuralNetwork),
-                 batches: ctypes.POINTER(ManyBatches)) -> np.ndarray:
-    mb = batches.contents
+                 many_batches: ctypes.POINTER(ManyBatches)) -> np.ndarray:
+    mb = many_batches.contents
     # Get first batch pointer
     first_batch_ptr = mb.ray_of_batches[0]
     out_batch_ptr = lib.pass_forward(ann, first_batch_ptr)
@@ -103,7 +105,7 @@ def pass_forward(ann: ctypes.POINTER(ArtificialNeuralNetwork),
     shape = (mat.number_of_rows, mat.number_of_cols)
     buf = ctypes.cast(mat.m, ctypes.POINTER(ctypes.c_float * (shape[0] * shape[1]))).contents
     arr = np.frombuffer(buf, dtype=np.float32).reshape(shape)
-    return arr
+    return arr.T
 
 
 def delete_batches(mb: ctypes.POINTER(ManyBatches)) -> None:
@@ -116,23 +118,46 @@ def deallocate_ann(ann: ctypes.POINTER(ArtificialNeuralNetwork)) -> None:
 
 # --- Example usage ---
 if __name__ == '__main__':
+    #import tracemalloc
+    #tracemalloc.start()
+    import faulthandler
+    faulthandler.enable()
+    
     # Read and batch data
-    train_inputs, train_labels = read_train_data(1000)
-    mb_in = load_data_into_batches(train_inputs, 1000, 10)
-    mb_out = load_data_into_batches(train_labels, 1000, 10)
+    train_inputs, train_labels = read_train_data(3000)
+    
+    mb_in = load_data_into_batches(train_inputs, 3000, 50)
+    mb_out = load_data_into_batches(train_labels, 3000, 50)
 
     # Initialize network
     ann = initialize_ann([784, 128, 10])
 
     # Train
-    train(ann, mb_in, mb_out)
+    train(ann, mb_in, mb_out, 2000)
+
+    # Read and batch test data
+    test_inputs, test_labels = read_test_data(20)
+    
+    mb_test_in = load_data_into_batches(test_inputs, 20, 20)
 
     # Inference
-    preds = pass_forward(ann, mb_in)
+    preds = pass_forward(ann, mb_test_in)
+    
+    print(type(preds))
     print('Predictions shape:', preds.shape)
-    print(preds)
+    for i in range(len(preds)):
+        print(preds[i])
+        print(test_labels[i])
+        print("\n\n")
 
     # Cleanup
     delete_batches(mb_in)
     delete_batches(mb_out)
+    delete_batches(mb_test_in)
     deallocate_ann(ann)
+    
+    #snapshot = tracemalloc.take_snapshot()
+    #top_stats = snapshot.statistics('lineno')
+    
+    #print(top_stats)
+

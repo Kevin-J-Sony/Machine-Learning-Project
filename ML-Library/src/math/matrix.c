@@ -291,3 +291,36 @@ void copy_matrix(matrix* out, matrix* in) {
 		}
 	}
 }
+
+
+#ifdef ML_LIB_DEBUG_MODE
+void print_mat(matrix* mat) {
+	size_t nrows = mat->number_of_rows;
+	size_t ncols = mat->number_of_cols;
+	number* m = mat->m;
+
+	fprintf(stdout, "----------\nMatrix info\n");
+	fprintf(stdout, "Number of rows: %lu \t Number of columns: %lu\n", nrows, ncols);
+
+	for (int i = 0; i < nrows; i++) {
+		for (int j = 0; j < ncols; j++) {
+			fprintf(stdout, "%f ", mat->m[i * ncols + j]);
+		}
+		fprintf(stdout, "\n");
+	}
+}
+
+void print_vec(vector* vec) {
+	size_t size = vec->size;
+	number* v = vec->v;
+
+	fprintf(stdout, "----------\nVector info\n");
+	fprintf(stdout, "Size of vector: %lu \n", size);
+
+	for (int i = 0; i < size; i++) {
+		fprintf(stdout, "%f ", v[i]);
+	}
+	fprintf(stdout, "\n");
+}
+
+#endif

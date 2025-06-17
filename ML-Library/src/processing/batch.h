@@ -39,4 +39,13 @@ void multiply_batch_by_matrix(batch *output_batch_vectors, matrix *mat, batch *i
 void add_vector_to_batch(batch* output_batch, batch* input_batch, vector* vec);
 void batch_hadamard_product(batch* output_batch, batch* product_one, batch* product_two);
 
+
+
+#ifdef ML_LIB_DEBUG_MODE
+void print_batch(batch* bat);
+void print_batch_compact_form(batch* bat);
+void print_many_batches(m_batch* mbat);
+#endif
+
+
 #endif

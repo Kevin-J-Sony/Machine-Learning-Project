@@ -32,8 +32,12 @@ void nonlinear_transform_derivative_mat(matrix* output, matrix* input);
 /**
  * Training and testing of the neural network
  */
-void train(ann* neural_network, m_batch* training_input, m_batch* training_output);
+void train(ann* neural_network, m_batch* training_input, m_batch* training_output, size_t number_of_loops);
 void test(ann* neural_network, m_batch* testing_input, m_batch* testing_output);
 
+
+#ifdef ML_LIB_DEBUG_MODE
+void print_network(ann* neural_network);
+#endif
 
 #endif

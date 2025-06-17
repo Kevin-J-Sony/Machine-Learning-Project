@@ -50,4 +50,10 @@ void matrix_transpose(matrix* out, matrix* in);
 void matrix_col_sum(vector* out, matrix* in);
 void copy_matrix(matrix* out, matrix* in);
 
+
+#ifdef ML_LIB_DEBUG_MODE
+void print_mat(matrix* mat);
+void print_vec(vector* vec);
+#endif
+
 #endif

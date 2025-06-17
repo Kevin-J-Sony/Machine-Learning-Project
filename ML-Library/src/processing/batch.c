@@ -176,3 +176,55 @@ void batch_hadamard_product(batch* output, batch* product_one, batch* product_tw
 
 	matrix_entrywise_product(output->data, product_one->data, product_two->data);
 }
+
+#ifdef ML_LIB_DEBUG_MODE
+void print_batch(batch* bat) {
+	size_t size = bat->number_of_vectors;
+	matrix* data = bat->data;
+
+	fprintf(stdout, "----------\nBatch info\n");
+	fprintf(stdout, "Number of vectors: %lu \n", size);
+
+	for (int i = 0; i < size; i++) {		
+		fprintf(stdout, "Vector %d: ", i+1);
+		for (int j = 0; j < bat->vector_size; j++) {
+			fprintf(stdout, "%f ", data->m[j * size + i]);
+		}
+		fprintf(stdout, "\n");
+	}
+}
+
+void print_batch_compact_form(batch* bat) {
+	size_t size = bat->number_of_vectors;
+	matrix* data = bat->data;
+
+	fprintf(stdout, "----------\nCompact Batch Representation\n");
+	fprintf(stdout, "Dimension (%lu x %lu) \n", data->number_of_rows, data->number_of_cols);
+
+	for (int i = 0; i < data->number_of_rows; i++) {		
+		for (int j = 0; j < data->number_of_cols; j++) {
+			fprintf(stdout, "%f ", data->m[i * data->number_of_cols + j]);
+		}
+		fprintf(stdout, "\n");
+	}
+}
+
+void print_many_batches(m_batch* mbat) {
+	size_t number_of_batches = mbat->number_of_batches;
+
+	fprintf(stdout, "----------\nMultiple Batches Data Structure\n");
+	
+	for (int i = 0; i < number_of_batches; i++) {		
+		fprintf(stdout, "Batch %d\n", i+1);
+		batch* b = mbat->ray_of_batches[i];
+		for (int j = 0; j < b->number_of_vectors; j++) {
+			fprintf(stdout, "Vector %d: ", j+1);
+			for (int k = 0; k < b->vector_size; k++) {
+				fprintf(stdout, "%f ", VALUE_AT(b->data, k, j));
+			}
+			fprintf(stdout,"\n");
+		}
+		fprintf(stdout, "\n");
+	}
+}
+#endif
