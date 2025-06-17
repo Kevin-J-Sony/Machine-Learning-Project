@@ -169,6 +169,34 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 			nonlinear_transform_mat(y_intermediate_outputs[i], z_intermediate_outputs[i]);
 		}
 
+		if (idx / many_batches_training_input->number_of_batches > 0) {
+			matrix* pred_output = y_intermediate_outputs[number_of_layers - 1];
+			print_mat(pred_output);
+			matrix* new_output = init_mat(pred_output->number_of_rows, pred_output->number_of_cols);
+
+			for (int curr_input_idx = 0; curr_input_idx < pred_output->number_of_cols; curr_input_idx++) {
+				int largest_y_idx = 0;
+				for (int y = 1; y < pred_output->number_of_rows; y++) {
+					if (VALUE_AT(pred_output, curr_input_idx, y) > VALUE_AT(pred_output, curr_input_idx, largest_y_idx)) {
+						largest_y_idx = y;
+					}
+				}
+
+				for (int y = 0; y < pred_output->number_of_rows; y++) {
+					if (y == largest_y_idx) {
+						VALUE_AT(new_output, curr_input_idx, y) = 1;
+					} else {
+						VALUE_AT(new_output, curr_input_idx, y) = 0;
+					}
+				}
+			}
+			fprintf(stdout, "\n\n\n");
+			print_mat(new_output);
+			copy_matrix(y_intermediate_outputs[number_of_layers - 1], new_output);
+			del_mat(new_output);
+			exit(EXIT_FAILURE);
+		}
+
 		/*
 		for (int idx = 0; idx < number_of_layers - 1; idx++) {
 			fprintf(stdout, "----------\n");
@@ -193,7 +221,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 		}
 		error /= io_number_of_vectors;
 		total_error += error;
-		if (idx % many_batches_training_input->number_of_batches) {
+		if (idx % many_batches_training_input->number_of_batches == 0) {
 			total_error /= many_batches_training_input->number_of_batches;
 			fprintf(stdout, "Loop %d. Error so far: %f and (gamma: %f)\n", idx/many_batches_training_input->number_of_batches, total_error, neural_network->gamma);
 			total_error = 0;
