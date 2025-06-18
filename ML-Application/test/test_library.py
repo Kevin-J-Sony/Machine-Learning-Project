@@ -124,19 +124,19 @@ if __name__ == '__main__':
     faulthandler.enable()
     
     # Read and batch data
-    train_inputs, train_labels = read_train_data(3000)
+    train_inputs, train_labels = read_train_data(4000)
     
-    mb_in = load_data_into_batches(train_inputs, 3000, 50)
-    mb_out = load_data_into_batches(train_labels, 3000, 50)
+    mb_in = load_data_into_batches(train_inputs, 4000, 16)
+    mb_out = load_data_into_batches(train_labels, 4000, 16)
 
     # Initialize network
     ann = initialize_ann([784, 128, 10])
 
     # Train
-    train(ann, mb_in, mb_out, 2000)
+    train(ann, mb_in, mb_out, 50)
 
     # Read and batch test data
-    test_inputs, test_labels = read_test_data(20)
+    test_inputs, test_labels = read_train_data(20)
     
     mb_test_in = load_data_into_batches(test_inputs, 20, 20)
 

@@ -8,3 +8,7 @@ ML-Library/*.o
 ML-Library/bin
 ML-Library/*.bat
 ML-Library/train.def
+
+*.aux
+*.log
+*.gz

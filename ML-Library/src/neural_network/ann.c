@@ -1,6 +1,6 @@
 #include "ann.h"
 
-ann* initialize_ann(size_t* sizes, size_t number_of_layers) {
+ann* initialize_ann(size_t* sizes, size_t number_of_layers, boolean classification_task) {
 	ann* neural_network;
 
 	#ifdef ML_LIB_DEBUG_MODE
@@ -32,7 +32,8 @@ ann* initialize_ann(size_t* sizes, size_t number_of_layers) {
 	}
 	neural_network->layers[number_of_layers - 1] = sizes[number_of_layers - 1];
 	neural_network->number_of_layers = number_of_layers;
-	neural_network->gamma = 0.001;
+	neural_network->gamma = 0.005;
+	neural_network->is_classifier = classification_task;
 
 	return neural_network;
 }
@@ -62,10 +63,11 @@ void nonlinear_transform_mat(matrix* output, matrix* input) {
 	}
 	#endif
 
+	number a = 0.001;
 	for (int i = 0; i < input->number_of_rows; i++) {
 		for (int j = 0; j < input->number_of_cols; j++) {
 			number entry = input->m[i * input->number_of_cols + j];
-			output->m[i * output->number_of_cols + j] = (entry > 0) ? entry : (0.01 * entry);
+			output->m[i * output->number_of_cols + j] = (entry > 0) ? entry : (a * entry);
 		}
 	}
 }
@@ -80,11 +82,12 @@ void nonlinear_transform_derivative_mat(matrix* output, matrix* input) {
 		exit(EXIT_FAILURE);
 	}
 	#endif
-
+	
+	number a = 0.001;
 	for (int i = 0; i < input->number_of_rows; i++) {
 		for (int j = 0; j < input->number_of_cols; j++) {
 			number entry = input->m[i * input->number_of_cols + j];
-			output->m[i * output->number_of_cols + j] = (entry > 0) ? 1.0 : 0.01;
+			output->m[i * output->number_of_cols + j] = (entry > 0) ? 1.0 : a;
 		}
 	}
 }
@@ -147,7 +150,7 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 	size_t nloops = number_of_loops;
 	int idx = 0;
 	int curr_nloops = 0;
-	number total_error = 0;
+	number total_loss = 0;
 	while (curr_nloops < nloops * many_batches_training_input->number_of_batches) { 
 		batch* training_input = many_batches_training_input->ray_of_batches[idx % many_batches_training_input->number_of_batches];
 		batch* training_output = many_batches_training_output->ray_of_batches[idx % many_batches_training_output->number_of_batches];
@@ -169,33 +172,43 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 			nonlinear_transform_mat(y_intermediate_outputs[i], z_intermediate_outputs[i]);
 		}
 
-		if (idx / many_batches_training_input->number_of_batches > 0) {
+		number error_rate = io_number_of_vectors;
+		// in the case the neural network is a classifier, we want the entries to be either a 0 or 1
+		if (neural_network->is_classifier) {
 			matrix* pred_output = y_intermediate_outputs[number_of_layers - 1];
-			print_mat(pred_output);
-			matrix* new_output = init_mat(pred_output->number_of_rows, pred_output->number_of_cols);
 
 			for (int curr_input_idx = 0; curr_input_idx < pred_output->number_of_cols; curr_input_idx++) {
 				int largest_y_idx = 0;
+				number t1, t2;
 				for (int y = 1; y < pred_output->number_of_rows; y++) {
-					if (VALUE_AT(pred_output, curr_input_idx, y) > VALUE_AT(pred_output, curr_input_idx, largest_y_idx)) {
+					t1 = VALUE_AT(pred_output, y, curr_input_idx);
+					t1 = (t1 > 0) ? t1 : -t1;
+
+					t2 = VALUE_AT(pred_output, largest_y_idx, curr_input_idx);
+					t2 = (t2 > 0) ? t2 : -t1;
+					if (t1 > t2) {
 						largest_y_idx = y;
 					}
 				}
 
 				for (int y = 0; y < pred_output->number_of_rows; y++) {
-					if (y == largest_y_idx) {
-						VALUE_AT(new_output, curr_input_idx, y) = 1;
-					} else {
-						VALUE_AT(new_output, curr_input_idx, y) = 0;
-					}
+					VALUE_AT(pred_output, y, curr_input_idx) = (y == largest_y_idx) ? 1 : 0;
+				}
+				
+				if (VALUE_AT(training_output->data, largest_y_idx, curr_input_idx) != VALUE_AT(pred_output, largest_y_idx, curr_input_idx)) {
+					error_rate -= 1;
 				}
 			}
-			fprintf(stdout, "\n\n\n");
-			print_mat(new_output);
-			copy_matrix(y_intermediate_outputs[number_of_layers - 1], new_output);
-			del_mat(new_output);
-			exit(EXIT_FAILURE);
+			/*
+			if (idx == 10) {
+				print_mat(pred_output);
+				fprintf(stdout, "\n\n\n");
+				print_mat(y_intermediate_outputs[number_of_layers - 1]);
+				exit(EXIT_FAILURE);
+			}
+			*/
 		}
+		error_rate /= io_number_of_vectors;
 
 		/*
 		for (int idx = 0; idx < number_of_layers - 1; idx++) {
@@ -213,20 +226,19 @@ void train(ann* neural_network, m_batch* many_batches_training_input, m_batch* m
 
 		#ifdef ML_LIB_DEBUG_MODE
 		// calculate error
-		number error = 0;
+		number loss = 0;
 		for (int x = 0; x < training_output->data->number_of_rows; x++) {
 			for (int y = 0; y < training_output->data->number_of_cols; y++) {
-				error += (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y)) * (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y));
+				loss += (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y)) * (VALUE_AT(training_output->data, x, y) - VALUE_AT(y_intermediate_outputs[number_of_layers - 1], x, y));
 			}
 		}
-		error /= io_number_of_vectors;
-		total_error += error;
+		// losos differs from error, since loss measures how far the prediction is from the output
+		loss /= io_number_of_vectors;
+		total_loss += loss;
 		if (idx % many_batches_training_input->number_of_batches == 0) {
-			total_error /= many_batches_training_input->number_of_batches;
-			fprintf(stdout, "Loop %d. Error so far: %f and (gamma: %f)\n", idx/many_batches_training_input->number_of_batches, total_error, neural_network->gamma);
-			total_error = 0;
-			if (neural_network->gamma > 0.000004)
-				neural_network->gamma /= 2;	
+			total_loss /= many_batches_training_input->number_of_batches;
+			fprintf(stdout, "Loop %d. Loss so far: %f. Error so far: %f. Gamma so far: %f)\n", idx/many_batches_training_input->number_of_batches, total_loss, error_rate * 100, neural_network->gamma);
+			total_loss = 0;
 		}
 		#endif
 

@@ -14,14 +14,14 @@ library: matrix.o batch.o ann.o
 static_library: matrix.o batch.o ann.o
 	ar rcs staticmllib.a matrix.o batch.o ann.o
 
-matrix.o: src/math/matrix.c
+matrix.o:
 	$(CC) -Wall -g -fPIC -c src/math/matrix.c -o matrix.o
 
-batch.o: src/processing/batch.c
+batch.o:
 	$(CC) -Wall -g -fPIC -c src/processing/batch.c -o batch.o
 
-ann.o: src/unsupervised/ann.c
-	$(CC) -Wall -g -fPIC -c src/unsupervised/ann.c -o ann.o
+ann.o:
+	$(CC) -Wall -g -fPIC -c src/neural_network/ann.c -o ann.o
 
 
 clean:
@@ -29,4 +29,4 @@ clean:
 
 
 test_for_mac:
-	clang -fsanitize=address -g -O1 -Wall test/test.c src/math/matrix.c src/processing/batch.c src/unsupervised/ann.c -o test_mac_exec
+	clang -fsanitize=address -g -O1 -Wall test/test.c src/math/matrix.c src/processing/batch.c src/neural_network/ann.c -o test_mac_exec

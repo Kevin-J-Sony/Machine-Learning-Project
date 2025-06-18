@@ -3,7 +3,7 @@
  */
 #include "../src/math/matrix.h"
 #include "../src/processing/batch.h"
-#include "../src/unsupervised/ann.h"
+#include "../src/neural_network/ann.h"
 
 void test_mat_add() {
 	fprintf(stdout, "\n--------------------\nBEGIN TESTING OF MATRIX ADDITION\n--------------------\n");
@@ -152,7 +152,7 @@ void test_ann() {
 	*/
 	size_t* sizes = (size_t *)calloc(3, sizeof(size_t));
 	sizes[0] = 4; sizes[1] = 4; sizes[2] = 4;
-	ann* nn = initialize_ann(sizes, 3);
+	ann* nn = initialize_ann(sizes, 3, FALSE);
 	
 	// print_network(nn);
 	free(sizes);
@@ -174,8 +174,15 @@ void test_ann() {
 	//print_many_batches(mb_input);
 	//print_many_batches(mb_output);
 
-	train(nn, mb_input, mb_output, 10);
+	train(nn, mb_input, mb_output, 500);
 	print_network(nn);
+
+	for (int i = 0; i < mb_input->number_of_batches; i++) {
+		batch* out = pass_forward(nn, mb_input->ray_of_batches[i]);
+		print_batch(out);
+		fprintf(stdout, "\n\n");
+		delete_batch(out);
+	}
 
 	delete_batches(mb_input);
 	delete_batches(mb_output);
