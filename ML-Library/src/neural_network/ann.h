@@ -1,6 +1,7 @@
 #include "../mllib.h"
 #include "../math/matrix.h"
 #include "../processing/batch.h"
+#include "layers.h"
 
 #ifndef MLLIB_ANN_H
 #define MLLIB_ANN_H
@@ -25,10 +26,12 @@ ann* initialize_ann(size_t* sizes, size_t number_of_layers, boolean classificati
 void deallocate_ann(ann* neural_network);
 
 /**
- * Nonlinear functions and derivatives
+ * Nonlinear activation functions and their derivatives
  */
-void nonlinear_transform_mat(matrix* output, matrix* input);
-void nonlinear_transform_derivative_mat(matrix* output, matrix* input);
+void leaky_relu(matrix* output, matrix* input);
+void leaky_relu_derivative(matrix* output, matrix* input);
+
+
 
 /**
  * Training and testing of the neural network

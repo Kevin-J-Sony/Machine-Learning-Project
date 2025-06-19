@@ -45,6 +45,8 @@ void matrix_vector_mult(vector* out, matrix* a, vector* b);
 void add_vector_to_matrix(matrix* out, matrix* mat, vector* vec);
 void matrix_entrywise_product(matrix* out, matrix* product_one, matrix* product_two);
 
+void exp(matrix* out, matrix* in);
+
 // basic matrix operations
 void matrix_transpose(matrix* out, matrix* in);
 void matrix_col_sum(vector* out, matrix* in);

@@ -55,7 +55,7 @@ void deallocate_ann(ann* neural_network) {
 /**
  * Leaky ReLU for nonlinear transformation applied on matrix. Applied to all entries
  */
-void nonlinear_transform_mat(matrix* output, matrix* input) {
+void leaky_relu(matrix* output, matrix* input) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if ( (output->number_of_cols != input->number_of_cols) || (output->number_of_rows != input->number_of_rows)) {
 		fprintf(stderr, "ERROR IN NONLINEAR TRANSFORM: output batch does not match input batch");
@@ -75,7 +75,7 @@ void nonlinear_transform_mat(matrix* output, matrix* input) {
 /**
  * Derivative of Leaky ReLU applied on matrix. Applied to all entries
  */
-void nonlinear_transform_derivative_mat(matrix* output, matrix* input) {
+void leaky_relu_derivative(matrix* output, matrix* input) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if ( (output->number_of_cols != input->number_of_cols) || (output->number_of_rows != input->number_of_rows)) {
 		fprintf(stderr, "ERROR IN NONLINEAR TRANSFORM DERIVATIVE: output batch does not match input batch.\n");
@@ -92,6 +92,12 @@ void nonlinear_transform_derivative_mat(matrix* output, matrix* input) {
 	}
 }
 
+/**
+ * Sigmoig function applied on columns
+ */
+void sigmoid(matrix* output, matrix* input) {
+
+}
 
 
 /**
