@@ -9,14 +9,21 @@ typedef int boolean;
 #define TRUE (1 == 1)
 #define FALSE (1 == 0)
 
+// define a data type 'number' to take on float, double, or long double
+typedef float number;
+
+#include <math.h>
+
 // Define a debug mode to quickly discover bugs
 #define ML_LIB_DEBUG_MODE
+
+// Define USE_CUDA if we want to use it
+#define USE_CUDA
 
 // Some files to include in debug mode
 #ifdef ML_LIB_DEBUG_MODE
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #endif
 
 

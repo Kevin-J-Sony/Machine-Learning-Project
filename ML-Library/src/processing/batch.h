@@ -32,14 +32,6 @@ void load_data_into_batch(batch* empty_batch, vector** huge_number_of_data, size
 m_batch* load_data_into_batches(vector** huge_number_of_data, size_t number_of_data, size_t batch_size);
 void delete_batches(m_batch* many_batches);
 
-/**
- * Batch operations
- */
-void multiply_batch_by_matrix(batch *output_batch_vectors, matrix *mat, batch *input_batch_vectors);
-void add_vector_to_batch(batch* output_batch, batch* input_batch, vector* vec);
-void batch_hadamard_product(batch* output_batch, batch* product_one, batch* product_two);
-
-
 
 #ifdef ML_LIB_DEBUG_MODE
 void print_batch(batch* bat);

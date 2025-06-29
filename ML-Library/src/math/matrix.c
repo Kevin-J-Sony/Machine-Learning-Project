@@ -4,20 +4,9 @@
 
 vector* init_vec(size_t s) {
 	vector* vec;
-	#ifdef ML_LIB_DEBUG_MODE
-	vec = (vector *)calloc(1, sizeof(vector));
-	#else
 	vec = (vector *)malloc(sizeof(vector));
-	#endif
-
-	vec->size = s;
-	
-	#ifdef ML_LIB_DEBUG_MODE
-	vec->v = (number *)calloc(s, sizeof(number));
-	#else
-	vec->v = (number *)malloc(s * sizeof(number));
-	#endif
-	
+	vec->size = s;	
+	vec->v = (number *)malloc(s * sizeof(number));	
 	return vec;
 }
 
@@ -29,21 +18,10 @@ void del_vec(vector* vec) {
 
 matrix* init_mat(size_t nrows, size_t ncols) {
 	matrix* mat;
-	#ifdef ML_LIB_DEBUG_MODE
-	mat = (matrix *)calloc(1, sizeof(matrix));
-	#else
 	mat = (matrix *)malloc(sizeof(matrix));
-	#endif
-
 	mat->number_of_rows = nrows;
 	mat->number_of_cols = ncols;
-	
-	#ifdef ML_LIB_DEBUG_MODE
-	mat->m = (number *)calloc(nrows * ncols, sizeof(number));
-	#else
-	mat->m = (number *)malloc(nrows * ncols * sizeof(number));
-	#endif
-	
+	mat->m = (number *)malloc(nrows * ncols * sizeof(number));	
 	return mat;
 }
 
@@ -52,30 +30,27 @@ void del_mat(matrix* mat) {
 	free(mat);
 }
 
-/* *** General vector, matrix operations *** */
 
-
-/**
- * Add two vectors of the same size together and store it in output.
- */
-void vector_add(vector* out, vector* a, vector* b) {
+// Add two vectors of the same size together and store it in output.
+void vector_add(vector* out, const vector* a, const vector* b) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if (! (a->size == b->size && a->size == out->size) ) {
 		fprintf(stderr, "ERROR IN VECTOR ADDITION: Size mismatch\n");
 		exit(EXIT_FAILURE);
-		// free to exit since when process ends, the virtual address space also is also terminated
-		// however, unsure of the situation when dealing with cuda
 	}
 	#endif
+
+	#ifndef USE_CUDA
 	for (int i = 0; i < a->size; i++) {
 		out->v[i] = a->v[i] + b->v[i];
 	}
+	#else
+	vector_add_cuda(out, a, b);
+	#endif
 }
 
-/**
- * Add two matrices of the same dimensions together and store it in output
- */
-void matrix_add(matrix* out, matrix* a, matrix* b) {
+// Add two matrices of the same dimensions together and store it in output
+void matrix_add(matrix* out, const matrix* a, const matrix* b) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if (! (a->number_of_rows == b->number_of_rows && a->number_of_rows == out->number_of_rows) ||
 		! (a->number_of_cols == b->number_of_cols && a->number_of_cols == out->number_of_cols) ) {
@@ -84,15 +59,19 @@ void matrix_add(matrix* out, matrix* a, matrix* b) {
 	}
 	#endif
 
+	#ifndef USE_CUDA
 	for (int i = 0; i < a->number_of_rows; i++) {
 		for (int j = 0; j < a->number_of_cols; j++) {
 			VALUE_AT(out, i, j) = VALUE_AT(a, i, j) + VALUE_AT(b, i, j);
-			// out->m[i * ncols + j] = a->m[i * ncols + j] + b->m[i * ncols + j];
 		}
 	}
+	#else
+	matrix_add_cuda(out, a, b);
+	#endif
 }
 
-void vector_sub(vector* out, vector* a, vector* b) {
+// Subtract vector b from vector a and store it in vector out
+void vector_sub(vector* out, const vector* a, const vector* b) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if (! (a->size == b->size && a->size == out->size) ) {
 		fprintf(stderr, "ERROR IN VECTOR SUBTRACTION: Size mismatch\n");
@@ -101,12 +80,18 @@ void vector_sub(vector* out, vector* a, vector* b) {
 		// however, unsure of the situation when dealing with cuda
 	}
 	#endif
+
+	#ifndef USE_CUDA
 	for (int i = 0; i < a->size; i++) {
 		out->v[i] = a->v[i] - b->v[i];
 	}
+	#else
+	vector_sub_cuda(out, a, b);
+	#endif
 }
 
-void matrix_sub(matrix* out, matrix* a, matrix* b) {
+// Subtract matrix b from matrix a and store it in out
+void matrix_sub(matrix* out, const matrix* a, const matrix* b) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if (! (a->number_of_rows == b->number_of_rows && a->number_of_rows == out->number_of_rows) ||
 		! (a->number_of_cols == b->number_of_cols && a->number_of_cols == out->number_of_cols) ) {
@@ -115,28 +100,37 @@ void matrix_sub(matrix* out, matrix* a, matrix* b) {
 	}
 	#endif
 
+	#ifndef USE_CUDA
 	for (int i = 0; i < a->number_of_rows; i++) {
 		for (int j = 0; j < a->number_of_cols; j++) {
 			VALUE_AT(out, i, j) = VALUE_AT(a, i, j) - VALUE_AT(b, i, j);
-			// out->m[i * ncols + j] = a->m[i * ncols + j] - b->m[i * ncols + j];
 		}
 	}
+	#else
+	matrix_sub_cuda(out, a, b);
+	#endif
 }
 
-
-void vector_scale(vector* out, vector* in, number scale) {
+// Scale every entry in the input vector and store it in the output
+void vector_scale(vector* out, const vector* in, const number scale) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if (out->size != in->size) {
 		fprintf(stderr, "ERROR IN VECTOR SCALE: Input/Output size mismatch\n");
 		exit(EXIT_FAILURE);
 	}
 	#endif
+
+	#ifndef USE_CUDA
 	for (int i = 0; i < in->size; i++) {
 		out->v[i] = scale * in->v[i];
 	}
+	#else
+	vector_scale_cuda(out, in, scale);
+	#endif
 }
 
-void matrix_scale(matrix* out, matrix* in, number scale) {
+// Scale every entry in the input matrix and store it in the output
+void matrix_scale(matrix* out, const matrix* in, const number scale) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if ((out->number_of_rows != in->number_of_rows) || (out->number_of_cols != in->number_of_cols) ) {
 		fprintf(stderr, "ERROR IN MATRIX SCALE: Input/Output dimension mismatch\n");
@@ -144,17 +138,19 @@ void matrix_scale(matrix* out, matrix* in, number scale) {
 	}
 	#endif
 
+	#ifndef USE_CUDA	
 	for (int i = 0; i < out->number_of_rows; i++) {
 		for (int j = 0; j < out->number_of_cols; j++) {
 			VALUE_AT(out, i, j) = scale * VALUE_AT(in, i, j);
 		}
 	}
+	#else
+	matrix_scale_cuda(out, in, scale);
+	#endif
 }
 
-/**
- * Basic matrix multiplication.
- */
-void matrix_mult(matrix* out, matrix* a, matrix* b) {
+// Your standard matrix multiplication. Multiply a and b and store it in out
+void matrix_mult(matrix* out, const matrix* a, const matrix* b) {
 	#ifdef ML_LIB_DEBUG_MODE
 	// Recall that matrix multiplication is valid only when a is (m, p) and b is (p, n)
 	// The resulting output is (m, n)
@@ -165,6 +161,7 @@ void matrix_mult(matrix* out, matrix* a, matrix* b) {
 	}
 	#endif
 
+	#ifndef USE_CUDA
 	for (int i = 0; i < out->number_of_rows; i++) {
 		for (int j = 0; j < out->number_of_cols; j++) {
 			VALUE_AT(out, i, j) = 0;
@@ -175,32 +172,42 @@ void matrix_mult(matrix* out, matrix* a, matrix* b) {
 			}
 		}
 	}
-
+	#else
+	matrix_mult_cuda(out, a, b);
+	#endif
 }
 
-/**
- * Apply a matrix transformation to a vector. A matrix is simply a linear transformation \matbb{R}^n -> \matbb{R}^m
- */
-void matrix_vector_mult(vector* out, matrix* a, vector* b) {
+
+// Multiply every entry in the first input with the corresponding entry in the second input and store it in the corresponding entry in the output matrix
+void matrix_entrywise_product(matrix* out, const matrix* product_one, const matrix* product_two) {
 	#ifdef ML_LIB_DEBUG_MODE
-	if (! (a->number_of_cols == b->size && a->number_of_rows == out->size) ) {
-		fprintf(stderr, "ERROR IN MATRIX VECTOR MULTIPLICATION: Dimension mismatch\n");
+	if ( (product_one->number_of_rows != product_two->number_of_rows) || 
+		 (product_one->number_of_cols != product_two->number_of_cols)) {
+		fprintf(stderr, "ERROR IN MATRIX ENTRYWISE PRODUCT: Dimensions of inputs do not match.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if ( (product_one->number_of_rows != out->number_of_rows) || 
+		 (product_one->number_of_cols != out->number_of_cols)) {
+		fprintf(stderr, "ERROR IN MATRIX ENTRYWISE PRODUCT: Dimensions of output does not match dimensions of inputs.\n");
 		exit(EXIT_FAILURE);
 	}
 	#endif
 
-	for (int i = 0; i < out->size; i++) {
-		out->v[i] = 0;
-		for (int j = 0; j < b->size; j++) {
-			out->v[i] += VALUE_AT(a, i, j) * b->v[j];
+	#ifndef USE_CUDA
+	for (int i = 0; i < out->number_of_rows; i++) {
+		for (int j = 0; j < out->number_of_cols; j++) {
+			VALUE_AT(out, i, j) = VALUE_AT(product_one, i, j) * VALUE_AT(product_two, i, j);
 		}
 	}
+	#else
+	matrix_entrywise_product_cuda(out, product_one, product_two);
+	#endif
 }
 
-/**
- * For each column of the input matrix, add the vector to it and store the corresponding output in another matrix
- */
-void add_vector_to_matrix(matrix* out, matrix* mat, vector* vec) {
+
+// For each column of the input matrix, add the vector to it and store the corresponding output in another matrix
+void add_vector_to_matrix(matrix* out, const matrix* mat, const vector* vec) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if ((mat->number_of_cols != out->number_of_cols) || (mat->number_of_rows != out->number_of_rows)) {
 		fprintf(stderr, "ERROR IN ADDITION OF VECTORS TO COLUMNS OF MATRIX MATRIX: Dimensions of input and output matrices do not match.\n");
@@ -220,51 +227,16 @@ void add_vector_to_matrix(matrix* out, matrix* mat, vector* vec) {
 	}
 }
 
-void matrix_entrywise_product(matrix* out, matrix* product_one, matrix* product_two) {
-	#ifdef ML_LIB_DEBUG_MODE
-	if ( (product_one->number_of_rows != product_two->number_of_rows) || 
-		 (product_one->number_of_cols != product_two->number_of_cols)) {
-		fprintf(stderr, "ERROR IN MATRIX ENTRYWISE PRODUCT: Dimensions of inputs do not match.\n");
-		exit(EXIT_FAILURE);
-	}
 
-	if ( (product_one->number_of_rows != out->number_of_rows) || 
-		 (product_one->number_of_cols != out->number_of_cols)) {
-		fprintf(stderr, "ERROR IN MATRIX ENTRYWISE PRODUCT: Dimensions of output does not match dimensions of inputs.\n");
-		exit(EXIT_FAILURE);
-	}
-	#endif
-
-	for (int i = 0; i < out->number_of_rows; i++) {
-		for (int j = 0; j < out->number_of_cols; j++) {
-			VALUE_AT(out, i, j) = VALUE_AT(product_one, i, j) * VALUE_AT(product_two, i, j);
-			// out->m[i * out->number_of_cols + j] = product_one->m[i * out->number_of_cols + j] + product_two->m[i * out->number_of_cols + j];
-		}
-	}
-}
-
-
-void matrix_transpose(matrix* out, matrix* in) {
-	#ifdef ML_LIB_DEBUG_MODE
-	if ((out->number_of_cols != in->number_of_rows) || (out->number_of_rows != in->number_of_cols)) {
-		fprintf(stderr, "ERROR IN MATRIX TRANSPOSE: Dimensions of output and input matrices do not correlate.\n");
-		exit(EXIT_FAILURE);
-	}
-	#endif
-	for (int i = 0; i < out->number_of_rows; i++) {
-		for (int j = 0; j < out->number_of_cols; j++) {
-			VALUE_AT(out, i, j) = VALUE_AT(in, j, i);
-		}
-	}
-}
-
-void matrix_col_sum(vector* out, matrix* in) {
+// Sum up all the columns in the input matrix and store it in the output vector
+void matrix_col_sum(vector* out, const matrix* in) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if (out->size != in->number_of_rows) {
 		fprintf(stderr, "ERROR IN COLUMN SUM OF MATRIX: Size of vector does not match column length of matrix.\n");
 		exit(EXIT_FAILURE);
 	}
 	#endif
+
 	for (int i = 0; i < out->size; i++) {
 		out->v[i] = 0;
 		for (int j = 0; j < in->number_of_cols; j++) {
@@ -274,10 +246,25 @@ void matrix_col_sum(vector* out, matrix* in) {
 }
 
 
-/**
- * Copy matrix from input to output
- */
-void copy_matrix(matrix* out, matrix* in) {
+// Store transpose of input into output
+void matrix_transpose(matrix* out, const matrix* in) {
+	#ifdef ML_LIB_DEBUG_MODE
+	if ((out->number_of_cols != in->number_of_rows) || (out->number_of_rows != in->number_of_cols)) {
+		fprintf(stderr, "ERROR IN MATRIX TRANSPOSE: Dimensions of output and input matrices do not correlate.\n");
+		exit(EXIT_FAILURE);
+	}
+	#endif
+	
+	for (int i = 0; i < out->number_of_rows; i++) {
+		for (int j = 0; j < out->number_of_cols; j++) {
+			VALUE_AT(out, i, j) = VALUE_AT(in, j, i);
+		}
+	}
+}
+
+
+// Copy matrix from input to output
+void copy_matrix(matrix* out, const matrix* in) {
 	#ifdef ML_LIB_DEBUG_MODE
 	if ((out->number_of_cols != in->number_of_cols) || (out->number_of_rows != in->number_of_rows)) {
 		fprintf(stderr, "ERROR IN COPYING MATRIX: Dimensions of output and input matrices do not match.\n");
@@ -293,6 +280,8 @@ void copy_matrix(matrix* out, matrix* in) {
 }
 
 
+
+// Basic debug functions
 #ifdef ML_LIB_DEBUG_MODE
 void print_mat(matrix* mat) {
 	size_t nrows = mat->number_of_rows;

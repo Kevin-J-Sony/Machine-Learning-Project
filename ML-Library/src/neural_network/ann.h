@@ -6,41 +6,40 @@
 #ifndef MLLIB_ANN_H
 #define MLLIB_ANN_H
 
-struct ann_ {
-	
-	/**
-	 * This structure contains an array of pointers to matrices and vectors, due to the way the matrix
-	 * and vector initialization is set up.
-	 */
+/*
+struct ann_ {	
 	matrix** weights;
 	vector** biases;
+
 	size_t* layers;
 	size_t number_of_layers;
 	number gamma;
 	boolean is_classifier;
 };
 typedef struct ann_ ann;
+*/
 
-
-ann* initialize_ann(size_t* sizes, size_t number_of_layers, boolean classification_task);
-void deallocate_ann(ann* neural_network);
+struct ann_ {
+	ann_layer* layers;
+	size_t number_of_layers;
+	number gamma;
+};
+typedef struct ann_ NeuralNet;
 
 /**
- * Nonlinear activation functions and their derivatives
+ * Refactoring code
  */
-void leaky_relu(matrix* output, matrix* input);
-void leaky_relu_derivative(matrix* output, matrix* input);
-
-
+NeuralNet* initialize_nn(const size_t* dims, size_t n_layers, number gamma);
+void free_nn(NeuralNet* nn);
 
 /**
  * Training and testing of the neural network
  */
-void train(ann* neural_network, m_batch* training_input, m_batch* training_output, size_t number_of_loops);
-batch* pass_forward(ann* neural_network, batch* inputs);
+void train(NeuralNet* neural_network, m_batch* training_input, m_batch* training_output, size_t number_of_loops);
+batch* pass_forward(NeuralNet* neural_network, batch* inputs);
 
 #ifdef ML_LIB_DEBUG_MODE
-void print_network(ann* neural_network);
+void print_network(NeuralNet* neural_network);
 #endif
 
 #endif

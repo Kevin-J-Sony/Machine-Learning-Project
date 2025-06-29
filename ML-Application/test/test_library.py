@@ -41,7 +41,8 @@ class ArtificialNeuralNetwork(ctypes.Structure):
     ]
 
 # Load the dynamic library
-lib = ctypes.CDLL(r"../lib/libmymllib.so")
+#lib = ctypes.CDLL(r"../lib/libmymllib.so")
+lib = ctypes.CDLL(r"../lib/train.dll")
 
 # --- Function prototypes ---
 lib.initialize_ann.argtypes = [ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t]
