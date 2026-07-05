@@ -4,7 +4,6 @@
 \usepackage{amssymb}
 \usepackage{amsfonts}
 
-\usepackage{listings}
 \usepackage{xcolor} % Required for colors
 
 \definecolor{mGreen}{rgb}{0,0.6,0}
@@ -13,25 +12,25 @@
 \definecolor{backgroundColour}{rgb}{0.95,0.95,0.92}
 
 
-\lstdefinestyle{CStyle}{
-	backgroundcolor=\color{backgroundColour},   
-	commentstyle=\color{mGreen},
-	keywordstyle=\color{magenta},
-	numberstyle=\tiny\color{mGray},
-	stringstyle=\color{mPurple},
-	basicstyle=\footnotesize,
-	breakatwhitespace=false,         
-	breaklines=true,                 
-	captionpos=b,                    
-	keepspaces=true,                 
-	numbers=left,                    
-	numbersep=5pt,                  
-	showspaces=false,                
-	showstringspaces=false,
-	showtabs=false,                  
-	tabsize=2,
-	language=C
-}
+% \lstdefinestyle{CStyle}{
+% 	backgroundcolor=\color{backgroundColour},   
+% 	commentstyle=\color{mGreen},
+% 	keywordstyle=\color{magenta},
+% 	numberstyle=\tiny\color{mGray},
+% 	stringstyle=\color{mPurple},
+% 	basicstyle=\footnotesize,
+% 	breakatwhitespace=false,         
+% 	breaklines=true,                 
+% 	captionpos=b,                    
+% 	keepspaces=true,                 
+% 	numbers=left,                    
+% 	numbersep=5pt,                  
+% 	showspaces=false,                
+% 	showstringspaces=false,
+% 	showtabs=false,                  
+% 	tabsize=2,
+% 	language=C
+% }
 
 
 \title{Machine Learning Project}
@@ -181,22 +180,7 @@
  	\subsection{Code}
  	
  	There are two ways to approach the construction of the artificial neural network. One is to use a set of implicit layers by only containing a set of matrices and vectors. This approach is relatively simple to set up, requiring only minimal set up.
- 	
- 	\begin{lstlisting}[style=CStyle, caption=Artificial Neural Network in C, label=lst:ann]
-	struct ann_ {
-		matrix** weights;
-		vector** biases;
-		activation_func* acc;
-		
-		size_t* layers;
-		size_t number_of_layers;
-		number gamma;
-		
-		boolean is_classifier;
-	};
-	typedef struct ann_ ann;
- 	\end{lstlisting}
- 	
+ 	 	
  	\appendix
  	
  	\section{Chain Rule for functions mapping to and from multiple dimensions}

@@ -1,13 +1,5 @@
 .vscode
-ML-Application/__pycache__
-ML-Application/test/__pycache__
-ML-Application/lib
-ML-Application/nn.py
-ML-Library/*.txt
-ML-Library/*.o
-ML-Library/bin
-ML-Library/*.bat
-ML-Library/train.def
+
 
 *.aux
 *.log
